@@ -37,7 +37,7 @@ Every case combines:
 
 Verdicts are `qualified`, `strong`, `partial`, or `refused`. Ranking sorts by score, hard failures, completed cases, latency, then model id. Latency breaks otherwise equal scores and is not folded into correctness.
 
-The runner writes each completed model to `results/<timestamp>/<model>/result.json`, then assembles the run's `report.json`, leaderboard, and atomic `results/latest.json` and `results/LEADERBOARD.md` pointers. Raw workspaces remain local and are ignored by Git; reports can include bounded runtime errors but never bearer or request-signing values.
+The runner writes each completed model to `results/<timestamp>/<model>/result.json`, then assembles the run's `report.json`, leaderboard, and atomic `results/latest.json` and `results/LEADERBOARD.md` pointers. Raw workspaces remain local and are ignored by Git; reports can include bounded runtime errors but never bearer or request-signing values. The latest complete recorded comparison is published at `results/final-v1-2-qualified/latest.json`, with its compact ranking at `results/final-v1-2-qualified/LEADERBOARD.md`.
 
 ## Boundaries
 
