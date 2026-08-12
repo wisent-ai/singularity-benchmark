@@ -20,10 +20,11 @@ JEDEN_BIN=target/release/singularity-benchmark \
 /usr/bin/env bash ../jeden/scripts/run-with-stado.sh \
   --singularity ../singularity/target/release/singularity \
   --jeden ../jeden/target/release/jeden \
-  --output results
+  --output results \
+  --jobs 4
 ```
 
-Use repeated `--model provider/model` arguments for a bounded comparison. `BRAMA_URL` must name the TLS service port; the host's unqualified HTTPS endpoint is a different protected surface.
+Use `--jobs` to bound concurrent models; each model remains sequential across its cases. Use repeated `--model provider/model` arguments for a bounded comparison. `BRAMA_URL` must name the TLS service port; the host's unqualified HTTPS endpoint is a different protected surface.
 
 ## Scoring
 
@@ -36,7 +37,7 @@ Every case combines:
 
 Verdicts are `qualified`, `strong`, `partial`, or `refused`. Ranking sorts by score, hard failures, completed cases, latency, then model id. Latency breaks otherwise equal scores and is not folded into correctness.
 
-The runner writes `results/<timestamp>/report.json`, a matching leaderboard, and atomic `results/latest.json` and `results/LEADERBOARD.md` pointers. Raw workspaces remain local and are ignored by Git; reports can include bounded runtime errors but never bearer or request-signing values.
+The runner writes each completed model to `results/<timestamp>/<model>/result.json`, then assembles the run's `report.json`, leaderboard, and atomic `results/latest.json` and `results/LEADERBOARD.md` pointers. Raw workspaces remain local and are ignored by Git; reports can include bounded runtime errors but never bearer or request-signing values.
 
 ## Boundaries
 

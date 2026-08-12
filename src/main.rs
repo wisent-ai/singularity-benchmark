@@ -3,6 +3,9 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Mutex;
+use std::thread;
 use std::time::Instant;
 
 use chrono::{DateTime, Utc};
@@ -35,6 +38,8 @@ struct Cli {
     las_server: String,
     #[arg(long, default_value_t = 600)]
     rpc_timeout_secs: u64,
+    #[arg(long, env = "SINGULARITY_BENCHMARK_JOBS", default_value_t = 4)]
+    jobs: usize,
 }
 
 #[derive(Debug, Deserialize)]
@@ -280,11 +285,36 @@ fn run() -> Result<(), String> {
     let run_id = started_at.format("%Y%m%dT%H%M%SZ").to_string();
     let run_root = cli.output.join(&run_id);
     fs::create_dir_all(&run_root).map_err(|error| error.to_string())?;
-    let mut results = Vec::new();
-    for model in &selected {
-        eprintln!("[model] {model}");
-        results.push(run_model(model, &dataset, dataset_root, &run_root, &cli)?);
+    if cli.jobs == 0 {
+        return Err("--jobs must be greater than zero".into());
     }
+    let next_model = AtomicUsize::new(0);
+    let gathered = Mutex::new(Vec::with_capacity(selected.len()));
+    let worker_count = cli.jobs.min(selected.len());
+    thread::scope(|scope| {
+        for _ in 0..worker_count {
+            scope.spawn(|| loop {
+                let index = next_model.fetch_add(1, Ordering::Relaxed);
+                let Some(model) = selected.get(index) else {
+                    break;
+                };
+                eprintln!("[model] {model}");
+                let result = run_model(model, &dataset, dataset_root, &run_root, &cli);
+                gathered
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .push((index, result));
+            });
+        }
+    });
+    let mut gathered = gathered
+        .into_inner()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    gathered.sort_by_key(|(index, _)| *index);
+    let results = gathered
+        .into_iter()
+        .map(|(_, result)| result)
+        .collect::<Result<Vec<_>, _>>()?;
     let ranking = rank(&results);
     let report = Report {
         schema: REPORT_SCHEMA,
@@ -398,7 +428,7 @@ fn run_model(
     let total_cases = cases.len() as u32;
     let score_percent = percent(score, maximum_score);
     let verdict = verdict(score_percent, hard_failures, completed_cases, total_cases);
-    Ok(ModelResult {
+    let result = ModelResult {
         model: model.to_owned(),
         score,
         maximum_score,
@@ -409,7 +439,10 @@ fn run_model(
         elapsed_ms: started.elapsed().as_millis(),
         verdict,
         cases,
-    })
+    };
+    let bytes = serde_json::to_vec_pretty(&result).map_err(|error| error.to_string())?;
+    write_atomic(&model_root.join("result.json"), &bytes)?;
+    Ok(result)
 }
 
 fn run_case(
