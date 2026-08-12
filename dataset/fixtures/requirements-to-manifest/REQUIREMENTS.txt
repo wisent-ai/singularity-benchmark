@@ -3,3 +3,10 @@ Mode: replicated
 Regions, in order: fra, waw
 Readiness path: /readyz
 Environment: LOG_LEVEL=info, CACHE_ENABLED=true
+
+Output schema:
+- service: string
+- mode: string
+- regions: ordered array of strings
+- health: object with path as a string
+- environment: object whose values are strings
