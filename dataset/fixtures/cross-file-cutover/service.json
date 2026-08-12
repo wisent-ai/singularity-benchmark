@@ -1,0 +1,6 @@
+{
+  "name": "legacy-router",
+  "port": 8080,
+  "protocol": "http",
+  "owner": "routing"
+}

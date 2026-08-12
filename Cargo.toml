@@ -1,0 +1,19 @@
+[package]
+name = "singularity-benchmark"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Evaluate autonomous mission performance across Brama models through Singularity and Jeden"
+license = "MIT"
+repository = "https://github.com/wisent-ai/singularity-benchmark"
+
+[[bin]]
+name = "singularity-benchmark"
+path = "src/main.rs"
+
+[dependencies]
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4", features = ["derive", "env"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"

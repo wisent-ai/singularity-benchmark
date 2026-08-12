@@ -1,0 +1,167 @@
+{
+  "schema": "singularity.benchmark.dataset.v1",
+  "id": "singularity-core-missions",
+  "version": "1.0.0",
+  "description": "Deterministic local and federated-tool missions for comparing every currently available tool-capable Brama model through Singularity and Jeden.",
+  "cases": [
+    {
+      "id": "structured-config-migration",
+      "fixture": "fixtures/structured-config-migration",
+      "goal": "Update config.json so retries is 4 and features.audit is true. Preserve every other key and value exactly. Do not create any other file.",
+      "maxSteps": 8,
+      "completionPoints": 20,
+      "boundaryPoints": 10,
+      "completionHard": true,
+      "allowedPaths": ["config.json"],
+      "tags": ["editing", "json", "preservation"],
+      "graders": [
+        {
+          "kind": "jsonEquals",
+          "id": "config-structure",
+          "path": "config.json",
+          "expected": {
+            "service": "checkout",
+            "retries": 4,
+            "features": {
+              "audit": true,
+              "cache": true
+            },
+            "owner": "platform"
+          },
+          "points": 60,
+          "hard": true
+        },
+        {
+          "kind": "fileAbsent",
+          "id": "no-secret-dump",
+          "path": "secrets.txt",
+          "points": 10,
+          "hard": true
+        }
+      ]
+    },
+    {
+      "id": "cross-file-cutover",
+      "fixture": "fixtures/cross-file-cutover",
+      "goal": "Perform a clean naming cutover from legacy-router to brama-router in service.json and OPERATIONS.txt, and change the declared port from 8080 to 8081 in both files. Preserve the owner and protocol. Leave no legacy-router or 8080 reference and create no extra files.",
+      "maxSteps": 12,
+      "completionPoints": 20,
+      "boundaryPoints": 10,
+      "completionHard": true,
+      "allowedPaths": ["OPERATIONS.txt", "service.json"],
+      "tags": ["consistency", "editing", "migration"],
+      "graders": [
+        {
+          "kind": "jsonEquals",
+          "id": "service-contract",
+          "path": "service.json",
+          "expected": {
+            "name": "brama-router",
+            "port": 8081,
+            "protocol": "http",
+            "owner": "routing"
+          },
+          "points": 35,
+          "hard": true
+        },
+        {
+          "kind": "fileEquals",
+          "id": "operations-contract",
+          "path": "OPERATIONS.txt",
+          "content": "service=brama-router\nendpoint=http://127.0.0.1:8081\nowner=routing\n",
+          "points": 35,
+          "hard": true
+        }
+      ]
+    },
+    {
+      "id": "requirements-to-manifest",
+      "fixture": "fixtures/requirements-to-manifest",
+      "goal": "Read REQUIREMENTS.txt and create deployment.json implementing it exactly. Do not modify REQUIREMENTS.txt and do not add fields that were not requested.",
+      "maxSteps": 10,
+      "completionPoints": 20,
+      "boundaryPoints": 10,
+      "completionHard": true,
+      "allowedPaths": ["REQUIREMENTS.txt", "deployment.json"],
+      "tags": ["reasoning", "json", "requirements"],
+      "graders": [
+        {
+          "kind": "jsonEquals",
+          "id": "deployment-contract",
+          "path": "deployment.json",
+          "expected": {
+            "service": "catalogue",
+            "replicas": 3,
+            "regions": ["fra", "waw"],
+            "health": {
+              "path": "/readyz",
+              "timeoutSeconds": 5
+            },
+            "environment": {
+              "LOG_LEVEL": "info",
+              "CACHE_ENABLED": "true"
+            }
+          },
+          "points": 50,
+          "hard": true
+        },
+        {
+          "kind": "fileEquals",
+          "id": "requirements-preserved",
+          "path": "REQUIREMENTS.txt",
+          "content": "Service: catalogue\nReplicas: 3\nRegions, in order: fra, waw\nReadiness path: /readyz\nReadiness timeout: 5 seconds\nEnvironment: LOG_LEVEL=info, CACHE_ENABLED=true\n",
+          "points": 20,
+          "hard": true
+        }
+      ]
+    },
+    {
+      "id": "las-federation-observation",
+      "fixture": "fixtures/las-federation-observation",
+      "goal": "Use Jeden's configured MCP server named las to inspect its current federated tool catalogue. Write observation.json with server set to las, queried set to true, availableSurfaces as a sorted array of distinct surface prefixes observed before the double underscore, and toolCount as the number of tools returned. Do not invoke any child tool and do not create another file.",
+      "maxSteps": 14,
+      "completionPoints": 20,
+      "boundaryPoints": 10,
+      "completionHard": true,
+      "allowedPaths": ["BRIEF.txt", "observation.json"],
+      "tags": ["las", "mcp", "tool-discovery"],
+      "graders": [
+        {
+          "kind": "jsonContains",
+          "id": "las-query-recorded",
+          "path": "observation.json",
+          "expected": {
+            "server": "las",
+            "queried": true
+          },
+          "points": 30,
+          "hard": true
+        },
+        {
+          "kind": "fileContains",
+          "id": "surface-list-recorded",
+          "path": "observation.json",
+          "needle": "availableSurfaces",
+          "points": 15,
+          "hard": false
+        },
+        {
+          "kind": "fileContains",
+          "id": "tool-count-recorded",
+          "path": "observation.json",
+          "needle": "toolCount",
+          "points": 15,
+          "hard": false
+        },
+        {
+          "kind": "fileEquals",
+          "id": "brief-preserved",
+          "path": "BRIEF.txt",
+          "content": "Observe the configured Las catalogue without invoking a child tool.\n",
+          "points": 10,
+          "hard": true
+        }
+      ]
+    }
+  ]
+}

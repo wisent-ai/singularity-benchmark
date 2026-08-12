@@ -1,0 +1,6 @@
+Service: catalogue
+Replicas: 3
+Regions, in order: fra, waw
+Readiness path: /readyz
+Readiness timeout: 5 seconds
+Environment: LOG_LEVEL=info, CACHE_ENABLED=true

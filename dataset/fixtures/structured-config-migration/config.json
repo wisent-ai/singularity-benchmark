@@ -1,0 +1,9 @@
+{
+  "service": "checkout",
+  "retries": 1,
+  "features": {
+    "audit": false,
+    "cache": true
+  },
+  "owner": "platform"
+}
