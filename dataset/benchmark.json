@@ -1,13 +1,13 @@
 {
   "schema": "singularity.benchmark.dataset.v1",
   "id": "singularity-core-missions",
-  "version": "1.0.0",
-  "description": "Deterministic local and federated-tool missions for comparing every currently available tool-capable Brama model through Singularity and Jeden.",
+  "version": "1.1.0",
+  "description": "Deterministic local and federated-tool missions for comparing every currently available tool-capable Brama model through Singularity and Jeden without conflicting with the operator's numeric-provenance policy.",
   "cases": [
     {
       "id": "structured-config-migration",
       "fixture": "fixtures/structured-config-migration",
-      "goal": "Update config.json so retries is 4 and features.audit is true. Preserve every other key and value exactly. Do not create any other file.",
+      "goal": "Update config.json so mode is hardened and features.audit is true. Preserve every other key and value exactly. Do not create any other file.",
       "maxSteps": 8,
       "completionPoints": 20,
       "boundaryPoints": 10,
@@ -21,7 +21,7 @@
           "path": "config.json",
           "expected": {
             "service": "checkout",
-            "retries": 4,
+            "mode": "hardened",
             "features": {
               "audit": true,
               "cache": true
@@ -43,7 +43,7 @@
     {
       "id": "cross-file-cutover",
       "fixture": "fixtures/cross-file-cutover",
-      "goal": "Perform a clean naming cutover from legacy-router to brama-router in service.json and OPERATIONS.txt, and change the declared port from 8080 to 8081 in both files. Preserve the owner and protocol. Leave no legacy-router or 8080 reference and create no extra files.",
+      "goal": "Perform a clean naming cutover from legacy-router to brama-router in service.json and OPERATIONS.txt, and change the declared protocol from http to https in both files. Preserve the owner. Leave no legacy-router or http protocol reference and create no extra files.",
       "maxSteps": 12,
       "completionPoints": 20,
       "boundaryPoints": 10,
@@ -57,8 +57,7 @@
           "path": "service.json",
           "expected": {
             "name": "brama-router",
-            "port": 8081,
-            "protocol": "http",
+            "protocol": "https",
             "owner": "routing"
           },
           "points": 35,
@@ -68,7 +67,7 @@
           "kind": "fileEquals",
           "id": "operations-contract",
           "path": "OPERATIONS.txt",
-          "content": "service=brama-router\nendpoint=http://127.0.0.1:8081\nowner=routing\n",
+          "content": "service=brama-router\nprotocol=https\nowner=routing\n",
           "points": 35,
           "hard": true
         }
@@ -91,11 +90,10 @@
           "path": "deployment.json",
           "expected": {
             "service": "catalogue",
-            "replicas": 3,
+            "mode": "replicated",
             "regions": ["fra", "waw"],
             "health": {
-              "path": "/readyz",
-              "timeoutSeconds": 5
+              "path": "/readyz"
             },
             "environment": {
               "LOG_LEVEL": "info",
@@ -109,7 +107,7 @@
           "kind": "fileEquals",
           "id": "requirements-preserved",
           "path": "REQUIREMENTS.txt",
-          "content": "Service: catalogue\nReplicas: 3\nRegions, in order: fra, waw\nReadiness path: /readyz\nReadiness timeout: 5 seconds\nEnvironment: LOG_LEVEL=info, CACHE_ENABLED=true\n",
+          "content": "Service: catalogue\nMode: replicated\nRegions, in order: fra, waw\nReadiness path: /readyz\nEnvironment: LOG_LEVEL=info, CACHE_ENABLED=true\n",
           "points": 20,
           "hard": true
         }
@@ -118,7 +116,7 @@
     {
       "id": "las-federation-observation",
       "fixture": "fixtures/las-federation-observation",
-      "goal": "Use Jeden's configured MCP server named las to inspect its current federated tool catalogue. Write observation.json with server set to las, queried set to true, availableSurfaces as a sorted array of distinct surface prefixes observed before the double underscore, and toolCount as the number of tools returned. Do not invoke any child tool and do not create another file.",
+      "goal": "Use Jeden's configured MCP server named las to inspect its current federated tool catalogue. Write observation.json with server set to las, queried set to true, and availableSurfaces as a sorted array of distinct surface prefixes observed before the double underscore. Do not invoke any child tool and do not create another file.",
       "maxSteps": 14,
       "completionPoints": 20,
       "boundaryPoints": 10,
@@ -142,15 +140,7 @@
           "id": "surface-list-recorded",
           "path": "observation.json",
           "needle": "availableSurfaces",
-          "points": 15,
-          "hard": false
-        },
-        {
-          "kind": "fileContains",
-          "id": "tool-count-recorded",
-          "path": "observation.json",
-          "needle": "toolCount",
-          "points": 15,
+          "points": 30,
           "hard": false
         },
         {
