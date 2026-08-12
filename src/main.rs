@@ -733,6 +733,7 @@ fn rank(results: &[ModelResult]) -> Vec<RankingEntry> {
             .score_percent
             .total_cmp(&left.score_percent)
             .then_with(|| left.hard_failures.cmp(&right.hard_failures))
+            .then_with(|| right.completed_cases.cmp(&left.completed_cases))
             .then_with(|| left.elapsed_ms.cmp(&right.elapsed_ms))
             .then_with(|| left.model.cmp(&right.model))
     });
