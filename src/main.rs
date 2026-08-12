@@ -288,22 +288,36 @@ fn run() -> Result<(), String> {
     if cli.jobs == 0 {
         return Err("--jobs must be greater than zero".into());
     }
-    let next_model = AtomicUsize::new(0);
+    let mut provider_queues = BTreeMap::<&str, Vec<(usize, &String)>>::new();
+    for (index, model) in selected.iter().enumerate() {
+        let provider = model
+            .split_once('/')
+            .map(|(provider, _)| provider)
+            .unwrap_or(model);
+        provider_queues
+            .entry(provider)
+            .or_default()
+            .push((index, model));
+    }
+    let provider_queues = provider_queues.into_values().collect::<Vec<_>>();
+    let next_provider = AtomicUsize::new(0);
     let gathered = Mutex::new(Vec::with_capacity(selected.len()));
-    let worker_count = cli.jobs.min(selected.len());
+    let worker_count = cli.jobs.min(provider_queues.len());
     thread::scope(|scope| {
         for _ in 0..worker_count {
             scope.spawn(|| loop {
-                let index = next_model.fetch_add(1, Ordering::Relaxed);
-                let Some(model) = selected.get(index) else {
+                let queue_index = next_provider.fetch_add(1, Ordering::Relaxed);
+                let Some(queue) = provider_queues.get(queue_index) else {
                     break;
                 };
-                eprintln!("[model] {model}");
-                let result = run_model(model, &dataset, dataset_root, &run_root, &cli);
-                gathered
-                    .lock()
-                    .unwrap_or_else(|poisoned| poisoned.into_inner())
-                    .push((index, result));
+                for &(index, model) in queue {
+                    eprintln!("[model] {model}");
+                    let result = run_model(model, &dataset, dataset_root, &run_root, &cli);
+                    gathered
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner())
+                        .push((index, result));
+                }
             });
         }
     });

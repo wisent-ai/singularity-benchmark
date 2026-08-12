@@ -24,7 +24,7 @@ JEDEN_BIN=target/release/singularity-benchmark \
   --jobs 4
 ```
 
-Use `--jobs` to bound concurrent models; each model remains sequential across its cases. Use repeated `--model provider/model` arguments for a bounded comparison. `BRAMA_URL` must name the TLS service port; the host's unqualified HTTPS endpoint is a different protected surface.
+Use `--jobs` to bound concurrent provider families; models sharing a provider prefix remain sequential so bounded subscription capacity cannot bias their verdicts. Each model also remains sequential across its cases. Use repeated `--model provider/model` arguments for a bounded comparison. `BRAMA_URL` must name the TLS service port; the host's unqualified HTTPS endpoint is a different protected surface.
 
 ## Scoring
 
