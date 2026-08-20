@@ -1,0 +1,15 @@
+[automation]
+managed = true
+source_fingerprint = "0d44b35fc5e1936c"
+category = "model"
+
+[banner]
+title = "Singularity Benchmark trains. Models improve."
+description = "Evaluate autonomous mission performance across Brama models through Singularity and Jeden"
+product = "Wisent"
+url = "wisent.com"
+theme = "dark"
+layout = "latent-field-left"
+art_seed = "singularity-benchmark"
+width = 1584
+height = 396
