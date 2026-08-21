@@ -3,8 +3,8 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread;
 use std::time::Instant;
 
@@ -21,7 +21,7 @@ const REPORT_SCHEMA: &str = "singularity.benchmark.report.v1";
 #[command(
     name = "singularity-benchmark",
     version,
-    about = "Evaluate every available tool-capable Brama model through Singularity and Jeden"
+    about = "Evaluate every available tool-capable Brama model through Singularity"
 )]
 struct Cli {
     #[arg(long, default_value = "dataset/benchmark.json")]
@@ -34,10 +34,6 @@ struct Cli {
     output: PathBuf,
     #[arg(long)]
     model: Vec<String>,
-    #[arg(long, default_value = "las")]
-    las_server: String,
-    #[arg(long, default_value_t = 600)]
-    rpc_timeout_secs: u64,
     #[arg(long, env = "SINGULARITY_BENCHMARK_JOBS", default_value_t = 4)]
     jobs: usize,
 }
@@ -57,7 +53,7 @@ struct Dataset {
 struct Case {
     id: String,
     fixture: String,
-    goal: String,
+    stimulus: String,
     max_steps: u32,
     completion_points: u32,
     boundary_points: u32,
@@ -305,18 +301,20 @@ fn run() -> Result<(), String> {
     let worker_count = cli.jobs.min(provider_queues.len());
     thread::scope(|scope| {
         for _ in 0..worker_count {
-            scope.spawn(|| loop {
-                let queue_index = next_provider.fetch_add(1, Ordering::Relaxed);
-                let Some(queue) = provider_queues.get(queue_index) else {
-                    break;
-                };
-                for &(index, model) in queue {
-                    eprintln!("[model] {model}");
-                    let result = run_model(model, &dataset, dataset_root, &run_root, &cli);
-                    gathered
-                        .lock()
-                        .unwrap_or_else(|poisoned| poisoned.into_inner())
-                        .push((index, result));
+            scope.spawn(|| {
+                loop {
+                    let queue_index = next_provider.fetch_add(1, Ordering::Relaxed);
+                    let Some(queue) = provider_queues.get(queue_index) else {
+                        break;
+                    };
+                    for &(index, model) in queue {
+                        eprintln!("[model] {model}");
+                        let result = run_model(model, &dataset, dataset_root, &run_root, &cli);
+                        gathered
+                            .lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner())
+                            .push((index, result));
+                    }
                 }
             });
         }
@@ -475,28 +473,45 @@ fn run_case(
     let state = fs::canonicalize(&case_root)
         .map_err(|error| error.to_string())?
         .join("state");
+    let unverified_digest = "0".repeat(64);
+    let agent_id = std::env::var("WISENT_APP_AGENT_ID").unwrap_or_else(|_| "wisent-app".into());
+    let brama_url = std::env::var("BRAMA_BASE_URL")
+        .or_else(|_| std::env::var("BRAMA_URL"))
+        .map_err(|_| "BRAMA_URL is required".to_string())?;
     let output = Command::new(&cli.singularity)
         .arg("once")
-        .arg("--jeden-command")
-        .arg(&cli.jeden)
+        .arg("--agent-id")
+        .arg(agent_id)
+        .arg("--role")
+        .arg("benchmark")
+        .arg("--environment")
+        .arg("isolated")
+        .arg("--host")
+        .arg("local")
+        .arg("--workload-id")
+        .arg("singularity-benchmark")
+        .arg("--workload-public-key")
+        .arg(&unverified_digest)
+        .arg("--executable-digest")
+        .arg(&unverified_digest)
+        .arg("--code-digest")
+        .arg(&unverified_digest)
+        .arg("--policy-digest")
+        .arg(&unverified_digest)
+        .arg("--policy-sequence")
+        .arg("0")
         .arg("--workspace")
         .arg(&workspace)
-        .arg("--las-server")
-        .arg(&cli.las_server)
-        .arg("--rpc-timeout-secs")
-        .arg(cli.rpc_timeout_secs.to_string())
-        .arg("--goal")
-        .arg(&case.goal)
+        .arg("--stimulus")
+        .arg(&case.stimulus)
         .arg("--state-dir")
         .arg(&state)
-        .arg("--max-cycles")
-        .arg("1")
-        .arg("--model")
+        .arg("--brama-model")
         .arg(model)
-        .arg("--max-steps")
+        .arg("--brama-url")
+        .arg(brama_url)
+        .arg("--max-tool-rounds")
         .arg(case.max_steps.to_string())
-        .arg("--allow-write")
-        .arg("--auto-approve")
         .current_dir(&workspace)
         .output()
         .map_err(|error| format!("failed to start Singularity: {error}"))?;

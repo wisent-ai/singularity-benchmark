@@ -10,7 +10,7 @@
 
 # Singularity Benchmark
 
-`singularity-benchmark` compares every currently available tool-capable Brama model on the same durable Singularity mission contract. Singularity owns mission scheduling, Jeden owns the model-and-tool session, Brama owns authenticated model routing, and Las owns federated tool discovery.
+`singularity-benchmark` compares every currently available tool-capable Brama model on the same deterministic external stimulus while Singularity retains its autonomous digital-being contract. Singularity owns the continuous cognition-and-tool loop, Brama owns authenticated model routing, and Las owns federated tool discovery.
 
 ## Inputs
 
@@ -21,7 +21,7 @@
 
 ## Run
 
-Build the public Singularity runtime and Jeden first, then launch the runner through Jeden's Skarbiec wrapper so the Brama bearer and `wisent-app` request-signing credential stay in memory:
+Build Singularity and Jeden first, then launch the runner through Jeden's Skarbiec wrapper so the Brama bearer and request-signing credential stay in memory while each case invokes one Singularity cycle:
 
 ```sh
 cargo build --release --locked
@@ -29,7 +29,6 @@ BRAMA_URL=https://charless-mac-mini.tail6443b3.ts.net:8443 \
 JEDEN_BIN=target/release/singularity-benchmark \
 /usr/bin/env bash ../jeden/scripts/run-with-stado.sh \
   --singularity ../singularity/target/release/singularity \
-  --jeden ../jeden/target/release/jeden \
   --output results \
   --jobs 4
 ```

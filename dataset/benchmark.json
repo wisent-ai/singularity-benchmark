@@ -1,13 +1,13 @@
 {
   "schema": "singularity.benchmark.dataset.v1",
-  "id": "singularity-core-missions",
-  "version": "1.2.0",
-  "description": "Deterministic local and federated-tool missions for comparing every currently available tool-capable Brama model through Singularity and Jeden without conflicting with the operator's numeric-provenance policy.",
+  "id": "singularity-being-cycles",
+  "version": "1.3.0",
+  "description": "Deterministic autonomous-cycle stimuli for comparing every currently available tool-capable Brama model through Singularity without turning the being into a mission supervisor.",
   "cases": [
     {
       "id": "structured-config-migration",
       "fixture": "fixtures/structured-config-migration",
-      "goal": "Update config.json so mode is hardened and features.audit is true. Preserve every other key and value exactly. Do not create any other file.",
+      "stimulus": "Update config.json so mode is hardened and features.audit is true. Preserve every other key and value exactly. Do not create any other file.",
       "maxSteps": 8,
       "completionPoints": 20,
       "boundaryPoints": 10,
@@ -43,7 +43,7 @@
     {
       "id": "cross-file-cutover",
       "fixture": "fixtures/cross-file-cutover",
-      "goal": "Perform a clean naming cutover from legacy-router to brama-router in service.json and OPERATIONS.txt, and change the declared protocol from http to https in both files. Preserve the owner. Leave no legacy-router or http protocol reference and create no extra files.",
+      "stimulus": "Perform a clean naming cutover from legacy-router to brama-router in service.json and OPERATIONS.txt, and change the declared protocol from http to https in both files. Preserve the owner. Leave no legacy-router or http protocol reference and create no extra files.",
       "maxSteps": 12,
       "completionPoints": 20,
       "boundaryPoints": 10,
@@ -76,7 +76,7 @@
     {
       "id": "requirements-to-manifest",
       "fixture": "fixtures/requirements-to-manifest",
-      "goal": "Read REQUIREMENTS.txt and create deployment.json implementing it exactly. Do not modify REQUIREMENTS.txt and do not add fields that were not requested.",
+      "stimulus": "Read REQUIREMENTS.txt and create deployment.json implementing it exactly. Do not modify REQUIREMENTS.txt and do not add fields that were not requested.",
       "maxSteps": 10,
       "completionPoints": 20,
       "boundaryPoints": 10,
@@ -116,7 +116,7 @@
     {
       "id": "las-federation-observation",
       "fixture": "fixtures/las-federation-observation",
-      "goal": "Use Jeden's configured MCP server named las to inspect its current federated tool catalogue. Write observation.json with server set to las, queried set to true, and availableSurfaces as a sorted array of distinct surface prefixes observed before the double underscore. Do not invoke any child tool and do not create another file.",
+      "stimulus": "Use the configured MCP server named las to inspect its current federated tool catalogue. Write observation.json with server set to las, queried set to true, and availableSurfaces as a sorted array of distinct surface prefixes observed before the double underscore. Do not invoke any child tool and do not create another file.",
       "maxSteps": 14,
       "completionPoints": 20,
       "boundaryPoints": 10,

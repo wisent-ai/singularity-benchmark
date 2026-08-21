@@ -3,7 +3,7 @@ name = "singularity-benchmark"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
-description = "Evaluate autonomous mission performance across Brama models through Singularity and Jeden"
+description = "Evaluate autonomous digital-being cycles across Brama models through Singularity"
 license = "MIT"
 repository = "https://github.com/wisent-ai/singularity-benchmark"
 
