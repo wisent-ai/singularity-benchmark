@@ -2,7 +2,7 @@
   "schema": "singularity.benchmark.dataset.v1",
   "id": "singularity-being-cycles",
   "version": "1.3.0",
-  "description": "Deterministic autonomous-cycle stimuli for comparing every currently available tool-capable Brama model through Singularity without turning the being into a mission supervisor.",
+  "description": "Deterministic external stimuli for comparing tool-capable Brama models while preserving Singularity's continuous autonomous-being contract.",
   "cases": [
     {
       "id": "structured-config-migration",
