@@ -346,9 +346,6 @@ fn run() -> Result<(), String> {
     let bytes = serde_json::to_vec_pretty(&report).map_err(|error| error.to_string())?;
     write_atomic(&run_root.join("report.json"), &bytes)?;
     write_atomic(&cli.output.join("latest.json"), &bytes)?;
-    let leaderboard = render_leaderboard(&report);
-    write_atomic(&run_root.join("LEADERBOARD.md"), leaderboard.as_bytes())?;
-    write_atomic(&cli.output.join("LEADERBOARD.md"), leaderboard.as_bytes())?;
     println!("{}", run_root.join("report.json").display());
     Ok(())
 }
@@ -784,34 +781,6 @@ fn verdict(score: f64, hard_failures: u32, completed: u32, total: u32) -> Verdic
     }
 }
 
-fn render_leaderboard(report: &Report) -> String {
-    let mut output = format!(
-        "# Singularity Benchmark Leaderboard\n\nCatalog `{}` · dataset `{}` `{}` · finished `{}`.\n\n| Rank | Model | Score | Hard failures | Completed | Time | Verdict |\n|---:|---|---:|---:|---:|---:|---|\n",
-        report.catalog_revision,
-        report.dataset_id,
-        report.dataset_version,
-        report.finished_at.to_rfc3339()
-    );
-    for entry in &report.ranking {
-        output.push_str(&format!(
-            "| {} | `{}` | {:.1}% | {} | {}/{} | {:.1}s | {:?} |\n",
-            entry.rank,
-            entry.model,
-            entry.score_percent,
-            entry.hard_failures,
-            entry.completed_cases,
-            report
-                .results
-                .first()
-                .map(|result| result.total_cases)
-                .unwrap_or(0),
-            entry.elapsed_ms as f64 / 1000.0,
-            entry.verdict
-        ));
-    }
-    output.push_str("\nScores measure observable fixture outcomes. Latency breaks otherwise equal scores and is not folded into correctness.\n");
-    output
-}
 
 fn percent(score: u32, maximum: u32) -> f64 {
     if maximum == 0 {
