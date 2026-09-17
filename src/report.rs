@@ -122,12 +122,17 @@ pub(crate) fn rank(results: &[ModelResult]) -> Vec<RankingEntry> {
     ranking
 }
 
+/// Score floors of the verdicts, on the 0-100 benchmark scale.
+const QUALIFIED_SCORE: f64 = 85.0;
+const STRONG_SCORE: f64 = 70.0;
+const PARTIAL_SCORE: f64 = 40.0;
+
 pub(crate) fn verdict(score: f64, hard_failures: u32, completed: u32, total: u32) -> Verdict {
-    if score >= 85.0 && hard_failures == 0 && completed == total {
+    if score >= QUALIFIED_SCORE && hard_failures == 0 && completed == total {
         Verdict::Qualified
-    } else if score >= 70.0 && hard_failures == 0 {
+    } else if score >= STRONG_SCORE && hard_failures == 0 {
         Verdict::Strong
-    } else if score >= 40.0 {
+    } else if score >= PARTIAL_SCORE {
         Verdict::Partial
     } else {
         Verdict::Refused

@@ -71,7 +71,9 @@ pub(crate) fn run_case(
     let state = fs::canonicalize(&case_root)
         .map_err(|error| error.to_string())?
         .join("state");
-    let unverified_digest = "0".repeat(64);
+    // A SHA-256 hex digest is 64 characters; all zeros marks an unverified workload.
+    const SHA256_HEX_LENGTH: usize = 64;
+    let unverified_digest = "0".repeat(SHA256_HEX_LENGTH);
     let agent_id = std::env::var("WISENT_APP_AGENT_ID").unwrap_or_else(|_| "wisent-app".into());
     let brama_url = std::env::var("BRAMA_BASE_URL")
         .or_else(|_| std::env::var("BRAMA_URL"))
