@@ -31,19 +31,26 @@ use run::workspace::write_atomic;
 #[command(
     name = "singularity-benchmark",
     version,
-    about = "Evaluate every available tool-capable Brama model through Singularity"
+    about = "Evaluate every available tool-capable Brama model through Singularity",
+    after_help = "Writes one ranked report under --output. Exit 2: the invocation is wrong; exit 1: the dataset, the catalog or a run refused, with the reason on stderr."
 )]
 struct Cli {
+    /// The benchmark dataset JSON; its cases are resolved relative to its directory.
     #[arg(long, default_value = "dataset/benchmark.json")]
     dataset: PathBuf,
+    /// The singularity executable each case runs.
     #[arg(long, env = "SINGULARITY_COMMAND", default_value = "singularity")]
     singularity: PathBuf,
+    /// The jeden executable that lists the model catalog.
     #[arg(long, env = "JEDEN_COMMAND", default_value = "jeden")]
     jeden: PathBuf,
+    /// Directory the run workspaces and the report are written to.
     #[arg(long, default_value = "results")]
     output: PathBuf,
+    /// Run only these catalog models (repeatable); every eligible model when omitted.
     #[arg(long)]
     model: Vec<String>,
+    /// How many cases run at once.
     #[arg(long, env = "SINGULARITY_BENCHMARK_JOBS", default_value_t = 4)]
     jobs: usize,
 }
