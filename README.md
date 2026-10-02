@@ -25,7 +25,7 @@ Build Singularity and Jeden first, then launch the runner through Jeden's Skarbi
 
 ```sh
 cargo build --release --locked
-BRAMA_URL=https://charless-mac-mini.tail6443b3.ts.net:8443 \
+BRAMA_URL="${BRAMA_URL:?Set BRAMA_URL to the Brama service URL}" \
 JEDEN_BIN=target/release/singularity-benchmark \
 /usr/bin/env bash ../jeden/scripts/run-with-stado.sh \
   --singularity ../singularity/target/release/singularity \
@@ -33,7 +33,7 @@ JEDEN_BIN=target/release/singularity-benchmark \
   --jobs 4
 ```
 
-Use `--jobs` to bound concurrent provider families; models sharing a provider prefix remain sequential so bounded subscription capacity cannot bias their verdicts. Each model also remains sequential across its cases. Use repeated `--model provider/model` arguments for a bounded comparison. `BRAMA_URL` must name the TLS service port; the host's unqualified HTTPS endpoint is a different protected surface.
+Use `--jobs` to bound concurrent provider families; models sharing a provider prefix remain sequential so bounded subscription capacity cannot bias their verdicts. Each model also remains sequential across its cases. Use repeated `--model provider/model` arguments for a bounded comparison. Set `BRAMA_URL` to the declared model-service endpoint, including its port when required by that deployment.
 
 ## Scoring
 
