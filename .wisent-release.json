@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "product": "singularity-benchmark",
+  "releases": false,
+  "reason": "The benchmark is a research harness run from its checkout against a built Singularity: Cargo.toml declares one binary and no workflow publishes it, and Stado's product catalog declares no release for it, so no package, image, hosted or versioned artifact is published."
+}
