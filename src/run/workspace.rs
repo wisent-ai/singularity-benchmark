@@ -32,7 +32,11 @@ pub(crate) fn copy_tree(source: &Path, destination: &Path) -> Result<(), String>
 }
 
 pub(crate) fn list_workspace_files(root: &Path) -> Result<BTreeSet<String>, String> {
-    pub(crate) fn walk(root: &Path, current: &Path, output: &mut BTreeSet<String>) -> Result<(), String> {
+    pub(crate) fn walk(
+        root: &Path,
+        current: &Path,
+        output: &mut BTreeSet<String>,
+    ) -> Result<(), String> {
         for entry in fs::read_dir(current).map_err(|error| error.to_string())? {
             let entry = entry.map_err(|error| error.to_string())?;
             if entry.file_name() == ".jeden" {
@@ -72,11 +76,7 @@ pub(crate) fn model_slug(model: &str) -> String {
         })
         .collect::<String>();
     let digest = format!("{:x}", Sha256::digest(model.as_bytes()));
-    format!("{}-{}", safe, &digest[..12])
-}
-
-pub(crate) fn truncate(value: &str, limit: usize) -> String {
-    value.chars().take(limit).collect()
+    format!("{safe}-{digest}")
 }
 
 pub(crate) fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), String> {

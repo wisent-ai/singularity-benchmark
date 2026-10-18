@@ -139,7 +139,6 @@ pub(crate) fn verdict(score: f64, hard_failures: u32, completed: u32, total: u32
     }
 }
 
-
 pub(crate) fn percent(score: u32, maximum: u32) -> f64 {
     if maximum == 0 {
         0.0

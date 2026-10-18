@@ -9,12 +9,11 @@ use std::path::Path;
 use std::process::Command;
 use std::time::Instant;
 
-
 use crate::Cli;
 use crate::dataset::{Case, Dataset};
 use crate::report::{CaseResult, GraderResult, ModelResult, SingularityReport, percent, verdict};
 use grade::grade;
-use workspace::{copy_tree, list_workspace_files, model_slug, truncate, write_atomic};
+use workspace::{copy_tree, list_workspace_files, model_slug, write_atomic};
 
 pub(crate) fn run_model(
     model: &str,
@@ -71,52 +70,44 @@ pub(crate) fn run_case(
     let state = fs::canonicalize(&case_root)
         .map_err(|error| error.to_string())?
         .join("state");
-    // A SHA-256 hex digest is 64 characters; all zeros marks an unverified workload.
-    const SHA256_HEX_LENGTH: usize = 64;
-    let unverified_digest = "0".repeat(SHA256_HEX_LENGTH);
-    let agent_id = std::env::var("WISENT_APP_AGENT_ID").unwrap_or_else(|_| "wisent-app".into());
-    let brama_url = std::env::var("BRAMA_BASE_URL")
-        .or_else(|_| std::env::var("BRAMA_URL"))
-        .map_err(|_| "BRAMA_URL is required".to_string())?;
-    let output = Command::new(&cli.singularity)
-        .arg("once")
-        .arg("--agent-id")
-        .arg(agent_id)
-        .arg("--role")
-        .arg("benchmark")
-        .arg("--environment")
-        .arg("isolated")
-        .arg("--host")
-        .arg("local")
-        .arg("--workload-id")
-        .arg("singularity-benchmark")
-        .arg("--workload-public-key")
-        .arg(&unverified_digest)
-        .arg("--executable-digest")
-        .arg(&unverified_digest)
-        .arg("--code-digest")
-        .arg(&unverified_digest)
-        .arg("--policy-digest")
-        .arg(&unverified_digest)
-        .arg("--policy-sequence")
-        .arg("0")
-        .arg("--workspace")
-        .arg(&workspace)
-        .arg("--stimulus")
-        .arg(&case.stimulus)
-        .arg("--state-dir")
-        .arg(&state)
-        .arg("--brama-model")
-        .arg(model)
-        .arg("--brama-url")
-        .arg(brama_url)
-        .arg("--max-tool-rounds")
-        .arg(case.max_steps.to_string())
-        .current_dir(&workspace)
-        .output()
-        .map_err(|error| format!("failed to start Singularity: {error}"))?;
+    // The being's identity, workload digests, policy sequence and Brama's
+    // address come from the caller's environment; Singularity reads each one
+    // and refuses the cycle by the variable's name when it is missing.
+    let output = stado_wait::output(
+        Command::new(&cli.singularity)
+            .arg("once")
+            .arg("--role")
+            .arg("benchmark")
+            .arg("--environment")
+            .arg("isolated")
+            .arg("--host")
+            .arg("local")
+            .arg("--workload-id")
+            .arg("singularity-benchmark")
+            .arg("--workspace")
+            .arg(&workspace)
+            .arg("--stimulus")
+            .arg(&case.stimulus)
+            .arg("--state-dir")
+            .arg(&state)
+            .arg("--brama-model")
+            .arg(model)
+            .current_dir(&workspace),
+    )
+    .map_err(|error| format!("failed to start Singularity: {error}"))?;
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let parsed = serde_json::from_str::<SingularityReport>(&stdout).ok();
+    // A report that does not parse is the case's error, carrying the parse
+    // cause and what Singularity printed.
+    let (parsed, report_error) = match serde_json::from_str::<SingularityReport>(&stdout) {
+        Ok(report) => (Some(report), None),
+        Err(error) => (
+            None,
+            Some(format!(
+                "Singularity's report does not parse: {error}; stdout: {}",
+                stdout.trim()
+            )),
+        ),
+    };
     let completed = output.status.success()
         && parsed
             .as_ref()
@@ -135,11 +126,7 @@ pub(crate) fn run_case(
     graders.push(GraderResult {
         id: "workspace_boundary".into(),
         passed: boundary_passed,
-        points: if boundary_passed {
-            case.boundary_points
-        } else {
-            0
-        },
+        points: case.boundary_points * u32::from(boundary_passed),
         maximum_points: case.boundary_points,
         hard: true,
         detail: if boundary_passed {
@@ -160,14 +147,18 @@ pub(crate) fn run_case(
         + u32::from(case.completion_hard && !completed);
     let error = (!output.status.success()).then(|| {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        truncate(stderr.trim(), 2000)
+        stderr.trim().to_string()
     });
+    let error = match (error, report_error) {
+        (Some(exit), Some(report)) => Some(format!("{exit}; {report}")),
+        (exit, report) => exit.or(report),
+    };
     Ok(CaseResult {
         case_id: case.id.clone(),
         tags: case.tags.clone(),
         completed,
         singularity_status: parsed.map(|report| report.status),
-        score: grader_score + if completed { case.completion_points } else { 0 },
+        score: grader_score + case.completion_points * u32::from(completed),
         maximum_score: grader_maximum + case.completion_points,
         hard_failures,
         elapsed_ms: started.elapsed().as_millis(),

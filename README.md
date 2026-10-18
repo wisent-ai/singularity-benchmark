@@ -21,19 +21,16 @@
 
 ## Run
 
-Build Singularity and Jeden first, then launch the runner through Jeden's Skarbiec wrapper so the Brama bearer and request-signing credential stay in memory while each case invokes one Singularity cycle:
+Build the runner, then run it with Singularity's environment: for each case the runner passes only the arguments it owns (`--role`, `--environment`, `--host`, `--workload-id`, `--workspace`, `--stimulus`, `--state-dir` and `--brama-model`). Every other value `singularity once` needs, among them the being's identity (`SINGULARITY_AGENT_ID`, `SINGULARITY_AGENT_NAME`, `SINGULARITY_AGENT_TICKER`), the workload's `SINGULARITY_WORKLOAD_PUBLIC_KEY`, `SINGULARITY_EXECUTABLE_SHA256`, `SINGULARITY_CODE_SHA256`, `SINGULARITY_POLICY_SHA256` and `SINGULARITY_POLICY_SEQUENCE`, Brama's `BRAMA_BASE_URL` with `BRAMA_BEARER_TOKEN_FILE` or `BRAMA_HMAC_SECRET_FILE`, and the Las release files, is read by Singularity from the runner's environment. A missing one fails the case with Singularity's refusal naming it, recorded in the case's `error`.
 
 ```sh
 cargo build --release --locked
-BRAMA_URL="${BRAMA_URL:?Set BRAMA_URL to the Brama service URL}" \
-JEDEN_BIN=target/release/singularity-benchmark \
-/usr/bin/env bash ../jeden/scripts/run-with-stado.sh \
+target/release/singularity-benchmark \
   --singularity ../singularity/target/release/singularity \
-  --output results \
-  --jobs 4
+  --output results
 ```
 
-Use `--jobs` to bound concurrent provider families; models sharing a provider prefix remain sequential so bounded subscription capacity cannot bias their verdicts. Each model also remains sequential across its cases. Use repeated `--model provider/model` arguments for a bounded comparison. Set `BRAMA_URL` to the declared model-service endpoint, including its port when required by that deployment.
+Use `--jobs` (or `SINGULARITY_BENCHMARK_JOBS`) to bound concurrent provider families; models sharing a provider prefix remain sequential so bounded subscription capacity cannot bias their verdicts. Each model also remains sequential across its cases. Use repeated `--model provider/model` arguments for a bounded comparison.
 
 ## Scoring
 
@@ -46,7 +43,7 @@ Every case combines:
 
 Verdicts are `qualified`, `strong`, `partial`, or `refused`. Ranking sorts by score, hard failures, completed cases, latency, then model id. Latency breaks otherwise equal scores and is not folded into correctness.
 
-The runner writes each completed model to `results/<timestamp>/<model>/result.json`, then assembles the run's canonical `report.json` and atomic `results/latest.json` pointer. Raw workspaces remain local and are ignored by Git; reports can include bounded runtime errors but never bearer or request-signing values. The latest complete recorded comparison is published at `results/final-v1-2-qualified/latest.json`.
+The runner writes each completed model to `results/<timestamp>/<model>/result.json`, where `<model>` is the model id with every character other than a letter, digit, `-` or `_` replaced by `-`, then `-` and the SHA-256 of the id. It then assembles the run's canonical `report.json` and atomic `results/latest.json` pointer. Raw workspaces remain local and are ignored by Git. A failed case's `error` carries Singularity's whole stderr; Singularity reads Brama's bearer and request-signing secret from files, and the runner records neither value. The latest complete recorded comparison is published at `results/final-v1-2-qualified/latest.json`.
 
 ## Boundaries
 
