@@ -11,6 +11,10 @@ repository = "https://github.com/wisent-ai/singularity-benchmark"
 name = "singularity-benchmark"
 path = "src/main.rs"
 
+[[test]]
+name = "catalog"
+path = "tests/catalog/main.rs"
+
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4", features = ["derive", "env"] }
